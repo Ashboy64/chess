@@ -1,4 +1,5 @@
 const game_url = "http://127.0.0.1:5000/"
+const prefix = "https://github.com/Ashboy64/chess/blob/master/images/Chess_"
 
 var assets = {
 	"black bishop": "&#9821",
@@ -14,6 +15,24 @@ var assets = {
 	"black rook": "&#9820",
 	"white rook": "&#9814"
 };
+
+var selected = null;
+var table = document.querySelector("table");
+
+// var assets = {
+// 	"black bishop": prefix + "bdt60.png",
+// 	"white bishop": prefix + "blt60.png",
+// 	"black king": prefix + "kdt60.png",
+// 	"white king": prefix + "klt60.png",
+// 	"black knight": prefix + "ndt60.png",
+// 	"white knight": prefix + "nlt60.png",
+// 	"black pawn": prefix + "pdt60.png",
+// 	"white pawn": prefix + "plt60.png",
+// 	"black queen": prefix + "qdt60.png",
+// 	"white queen": prefix + "qlt60.png",
+// 	"black rook": prefix + "rdt60.png",
+// 	"white rook": prefix + "rlt60.png"
+// };
 
 function format(table){
 	table.style.marginLeft = "auto"
@@ -31,6 +50,10 @@ function generateBoard(table) {
 			div.id = "div_" + i + "." + j
 			div.style.width = "75px";
 			div.style.height = "75px";
+			div.style.border = "1px solid white"
+			div.onclick = function () {
+				return onClick(this.id)
+			};
 
 			if ((i + j) % 2 == 0){
 				div.style.background = "#e1e2e3"
@@ -41,6 +64,35 @@ function generateBoard(table) {
 
 			cell.appendChild(div)
 		}
+	}
+}
+
+function onClick(id){
+	let div = document.getElementById(id)
+
+	if (selected == null) {
+
+		div.style.border = "1px solid red"
+		selected = id.slice(4).split(".")
+
+	} else {
+
+		let Http = new XMLHttpRequest();
+		Http.open("GET", game_url + "take_action" + formatParams({
+			"type": 0,
+			"new": [selected, id.slice(4).split(".")]
+		}));
+		Http.send();
+
+		Http.onreadystatechange = (e) => {
+			if (Http.readyState == 4 && Http.status == 200){
+				document.getElementById("div_" + selected.join(".")).innerHTML = "";
+				document.getElementById("div_" + selected.join(".")).style.border = "1px solid white";
+				selected = null;
+				updateTable(table)
+			}
+		}
+
 	}
 }
 
@@ -67,7 +119,8 @@ function updateTable(table){
 						}
 
 						if (assets.hasOwnProperty(to_use)){
-							div.innerHTML += '<p style="font-size: 60px; margin-top: 0px;" id=p_' + i + "." + j + '>' + assets[to_use] + '</p>';
+							div.innerHTML = '<p style="font-size: 60px; margin-top: 0px;" id=p_' + i + "." + j + '>' + assets[to_use] + '</p>';
+							// div.innerHTML += '<img src="' + assets[to_use] + '"/>';
 						}
 					}
 				}
@@ -76,7 +129,15 @@ function updateTable(table){
 	}
 }
 
-let table = document.querySelector("table");
+function formatParams( params ){
+  return "?" + Object
+        .keys(params)
+        .map(function(key){
+          return key+"="+encodeURIComponent(params[key])
+        })
+        .join("&")
+}
+
 format(table)
 generateBoard(table)
 updateTable(table)

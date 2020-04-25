@@ -60,8 +60,10 @@ class Chess(object):
         if action.type == 0:
             a_init = action.new[0]
             a_final = action.new[1]
-            self.board[a_final[0]][a_final[1]] = self.board[a_init[0]][a_init[1]]
-            self.board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+
+            if action in self.possible_moves(a_init[0], a_init[1]):
+                self.board[a_final[0]][a_final[1]] = self.board[a_init[0]][a_init[1]]
+                self.board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
         return self.board
 
     def step(self, action):
@@ -264,6 +266,9 @@ class Action(object):
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, obj):
+        return isinstance(obj, Action) and str(obj) == str(self)
 
 
 class Square(object):
