@@ -86,7 +86,7 @@ function onClick(id){
 
 		Http.onreadystatechange = (e) => {
 			if (Http.readyState == 4 && Http.status == 200){
-				document.getElementById("div_" + selected.join(".")).innerHTML = "";
+				// document.getElementById("div_" + selected.join(".")).innerHTML = "";
 				document.getElementById("div_" + selected.join(".")).style.border = "1px solid white";
 				selected = null;
 				updateTable(table)
@@ -116,6 +116,8 @@ function updateTable(table){
 							to_use = "white " + to_use;
 						} else if (game_state[i][j][0] == '1') {
 							to_use = "black " + to_use;
+						} else {
+							div.innerHTML = '';
 						}
 
 						if (assets.hasOwnProperty(to_use)){

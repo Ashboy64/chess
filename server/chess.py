@@ -1,5 +1,6 @@
 import ruamel.yaml
 import numpy as np
+import copy
 
 
 class Chess(object):
@@ -40,20 +41,37 @@ class Chess(object):
         self.board[len(self.board) - 1] = start_black
         self.board[len(self.board) - 2] = pawn_black
 
-    def possible_moves(self, r, c):
-        p = self.board[r][c]
+    def possible_moves(self, color, board=None):
+        if board is None:
+            board = self.board
+
+        moves = []
+
+        for r in range(len(board)):
+            for c in range(len(board[0])):
+                if board[r][c].color == color:
+                    moves += self.moves_at_pos(r, c, board)
+
+        return moves
+
+    def moves_at_pos(self, r, c, board=None):
+
+        if board is None:
+            board = self.board
+
+        p = board[r][c]
 
         use = {
-            0: lambda x, y: [],
+            0: lambda x, y, z: [],
             1: self.pawn_possible_moves,
             2: self.rook_possible_moves,
             3: self.bishop_possible_moves,
             4: self.knight_possible_moves,
-            5: lambda x, y: self.rook_possible_moves(x, y) + self.bishop_possible_moves(x, y),
+            5: lambda x, y, z: self.rook_possible_moves(x, y, z) + self.bishop_possible_moves(x, y, z),
             6: self.king_possible_moves
         }
 
-        return use[p.index](r, c)
+        return use[p.index](r, c, board)
 
     def real_step(self, action):
         """Actually take a move in the game"""
@@ -61,62 +79,75 @@ class Chess(object):
             a_init = action.new[0]
             a_final = action.new[1]
 
-            if action in self.possible_moves(a_init[0], a_init[1]):
+            if action in self.moves_at_pos(a_init[0], a_init[1]):
                 self.board[a_final[0]][a_final[1]] = self.board[a_init[0]][a_init[1]]
                 self.board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
         return self.board
 
-    def step(self, action):
+    def step(self, action, board=None):
         """For planning purposes; what would the board look like if this move happened"""
-        board = self.board.copy()
+
+        if board is None:
+            board = self.board
+
+        # Make a copy of board
+        new_board = []
+        for row in board:
+            new_board.append([Square(self, s.color, s.index, s.name) for s in row])
+
         if action.type == 0:
             a_init = action.new[0]
             a_final = action.new[1]
-            board[a_final[0]][a_final[1]] = board[a_init[0]][a_init[1]]
-            board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
-        return board
+            new_board[a_final[0]][a_final[1]] = new_board[a_init[0]][a_init[1]]
+            new_board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
 
-    def evaluate(self, my_col):
+        return new_board
+
+    def evaluate(self, my_col, board=None):
         """Simple evaluation of board that returns sum of your pts - sum of opponents"""
+
+        if board is None:
+            board = self.board
+
         total = 0
 
-        for i in range(len(self.board)):
-            for j in range(len(self.board[0])):
-                if self.board[i][j].color == 1:
-                    total += self.value_key[self.board[i][j].name]
+        for i in range(len(board)):
+            for j in range(len(board[0])):
+                if board[i][j].color == 1:
+                    total += self.value_key[board[i][j].name]
                 else:
-                    total -= self.value_key[self.board[i][j].name]
+                    total -= self.value_key[board[i][j].name]
 
         if my_col == 1:
             return total
         return -1*total
 
-    def king_possible_moves(self, r, c):
-        p = self.board[r][c]
+    def king_possible_moves(self, r, c, board):
+        p = board[r][c]
         moves = []
 
         for i in range(-1, 1):
             for j in range(-1, 1):
-                if ((i != 0 or j != 0) and (0 <= r + i < len(self.board)) and (0 <= c + j < len(self.board[0]))
-                        and (self.board[r + i][c + j].color != p.color)):
+                if ((i != 0 or j != 0) and (0 <= r + i < len(board)) and (0 <= c + j < len(board[0]))
+                        and (board[r + i][c + j].color != p.color)):
                     moves.append(Action(0, [[r, c], [r + i, c + j]]))
 
         return moves
 
-    def knight_possible_moves(self, r, c):
-        p = self.board[r][c]
+    def knight_possible_moves(self, r, c, board):
+        p = board[r][c]
         moves = []
 
         for i in range(-2, 3):
             for j in [-3 + abs(i), 3 - abs(i)]:
-                if ((i != 0 and j != 0) and (0 <= r + i < len(self.board)) and (0 <= c + j < len(self.board[0]))
-                        and (self.board[r + i][c + j].color != p.color)):
+                if ((i != 0 and j != 0) and (0 <= r + i < len(board)) and (0 <= c + j < len(board[0]))
+                        and (board[r + i][c + j].color != p.color)):
                     moves.append(Action(0, [[r, c], [r + i, c + j]]))
 
         return moves
 
-    def bishop_possible_moves(self, r, c):
-        p = self.board[r][c]
+    def bishop_possible_moves(self, r, c, board):
+        p = board[r][c]
         moves = []
 
         if p.color == 0:
@@ -132,34 +163,34 @@ class Chess(object):
 
         while True:
             if not rpcp:
-                if (r + offset < len(self.board) and (c + offset) < len(self.board[0])
-                        and (self.board[r + offset][c + offset].color != p.color)):
+                if (r + offset < len(board) and (c + offset) < len(board[0])
+                        and (board[r + offset][c + offset].color != p.color)):
                     moves.append(Action(0, [[r, c], [r + offset, c + offset]]))
-                    if self.board[r + offset][c + offset].color == complement:
+                    if board[r + offset][c + offset].color == complement:
                         rpcp = True
                 else:
                     rpcp = True
             if not rpcm:
-                if (r + offset < len(self.board) and (c - offset) >= 0
-                        and (self.board[r + offset][c - offset].color != p.color)):
+                if (r + offset < len(board) and (c - offset) >= 0
+                        and (board[r + offset][c - offset].color != p.color)):
                     moves.append(Action(0, [[r, c], [r + offset, c - offset]]))
-                    if self.board[r + offset][c - offset].color == complement:
+                    if board[r + offset][c - offset].color == complement:
                         rpcm = True
                 else:
                     rpcm = True
             if not rmcp:
-                if (r - offset >= 0 and (c + offset) < len(self.board[0])
-                        and (self.board[r - offset][c + offset].color != p.color)):
+                if (r - offset >= 0 and (c + offset) < len(board[0])
+                        and (board[r - offset][c + offset].color != p.color)):
                     moves.append(Action(0, [[r, c], [r - offset, c + offset]]))
-                    if self.board[r - offset][c + offset].color == complement:
+                    if board[r - offset][c + offset].color == complement:
                         rmcp = True
                 else:
                     rmcp = True
             if not rmcm:
                 if (r - offset >= 0 and (c - offset) >= 0
-                        and (self.board[r - offset][c - offset].color != p.color)):
+                        and (board[r - offset][c - offset].color != p.color)):
                     moves.append(Action(0, [[r, c], [r - offset, c - offset]]))
-                    if self.board[r - offset][c - offset].color == complement:
+                    if board[r - offset][c - offset].color == complement:
                         rmcm = True
                 else:
                     rmcm = True
@@ -170,8 +201,8 @@ class Chess(object):
 
         return moves
 
-    def rook_possible_moves(self, r, c):
-        p = self.board[r][c]
+    def rook_possible_moves(self, r, c, board):
+        p = board[r][c]
         moves = []
 
         if p.color == 0:
@@ -180,41 +211,41 @@ class Chess(object):
             complement = 0
 
         for i in range(c + 1, 8):
-            if self.board[r][i].color != p.color:
-                moves.append(Action([r, c], [r, i]))
-                if self.board[r][i].color == complement:
+            if board[r][i].color != p.color:
+                moves.append(Action(0, [[r, c], [r, i]]))
+                if board[r][i].color == complement:
                     break
             else:
                 break
 
         for i in range(c - 1, -1, -1):
-            if self.board[r][i].color != p.color:
-                moves.append(Action([r, c], [r, i]))
-                if self.board[r][i].color == complement:
+            if board[r][i].color != p.color:
+                moves.append(Action(0, [[r, c], [r, i]]))
+                if board[r][i].color == complement:
                     break
             else:
                 break
 
         for i in range(r + 1, 8):
-            if self.board[i][c].color != p.color:
-                moves.append(Action([r, c], [i, c]))
-                if self.board[i][c].color == complement:
+            if board[i][c].color != p.color:
+                moves.append(Action(0, [[r, c], [i, c]]))
+                if board[i][c].color == complement:
                     break
             else:
                 break
 
         for i in range(r - 1, -1, -1):
-            if self.board[i][c].color != p.color:
-                moves.append(Action([r, c], [i, c]))
-                if self.board[i][c].color == complement:
+            if board[i][c].color != p.color:
+                moves.append(Action(0, [[r, c], [i, c]]))
+                if board[i][c].color == complement:
                     break
             else:
                 break
 
         return moves
 
-    def pawn_possible_moves(self, r, c):
-        p = self.board[r][c]
+    def pawn_possible_moves(self, r, c, board):
+        p = board[r][c]
         moves = []
 
         if p.color == 0:
@@ -224,21 +255,21 @@ class Chess(object):
 
         if p.color == 0:
             i = 1
-            if (r == 1) and (self.board[r + 2][c].index == 0):
+            if (r == 1) and (board[r + 2][c].index == 0):
                 moves.append(Action(0, [[r, c], [r + 2, c]]))
 
         elif p.color == 1:
             i = -1
-            if (r == len(self.board) - 2) and (self.board[r - 2][c].index == 0):
+            if (r == len(board) - 2) and (board[r - 2][c].index == 0):
                 moves.append(Action(0, [[r, c], [r - 2, c]]))
 
         for j in [-1, 0, 1]:
-            if (i != 0) or (j != 0):
-                p2 = self.board[r + i][c + j]
+            if ((i != 0) or (j != 0)) and (0 < r + i < len(board) and 0 < c + j < len(board[0])):
+                p2 = board[r + i][c + j]
                 if p2.color == complement:
                     moves.append(Action(0, [[r, c], [r + i, c + j]]))
 
-        if self.board[r + i][c].index == 0:
+        if board[r + i][c].index == 0:
             moves.append(Action(0, [[r, c], [r + i, c]]))
 
         return moves
@@ -290,11 +321,14 @@ class Square(object):
     def __repr__(self):
         return str(self.color) + " " + str(self.name)
 
+    def __eq__(self, obj):
+        return isinstance(obj, Square) and obj.__repr__() == self.__repr__()
+
 
 def main():
     game = Chess()
     game.print_board()
-    game.real_step(game.possible_moves(0, 1)[0])
+    game.real_step(game.moves_at_pos(0, 1)[0])
     print()
     game.print_board()
 
