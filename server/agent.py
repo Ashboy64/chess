@@ -12,41 +12,49 @@ class Agent(object):
         self.depth = depth
 
     def act(self):
-        self.game.real_step(self.get_action(self.depth))
+        self.game.real_step(self.minimax_decision(self.depth))
 
-    def get_action(self, depth):
+    def minimax_decision(self, depth):
         """ONLY WORKS FOR ACTION TYPE 0"""
-        action_values = {}
-        possible_moves = self.game.possible_moves(self.color)
-        for action in possible_moves:
-            frontier = LIFO()
-            frontier.push(self.game.step(action))
-            visited = []
-            action_values[(tuple(action.new[0]), tuple(action.new[1]))] = self.recursive_minimax(frontier, visited, -1, depth)
-        print(action_values)
-        max_move = list(max(action_values, key=action_values.get))
-        return Action(0, [list(max_move[0]), list(max_move[1])])
+        possible_actions = self.game.possible_moves(self.color)
+        best_action_value = None
+        best_action = None
 
-    def recursive_minimax(self, frontier, visited, status, depth):
-        # status 1 is max, type -1 is min
-        n = frontier.pop()
-        visited.append(n)
+        for a in possible_actions:
+            val = self.min_value(self.game.step(a), (self.color + 1) % 2, depth - 1)
+            if (best_action_value is None) or (val > best_action_value):
+                best_action_value = val
+                best_action = a
+        return best_action
 
-        if (status == 0 and self.color == 0) or (status == 1 and self.color == 1):
-            c = 0  # playing white
-        else:
-            c = 1  # playing black
-
+    def min_value(self, state, color, depth):
         if depth == 0:
-            return status * self.game.evaluate(c, n)  # return the value of the node
+            return self.game.evaluate(self.color, board=state)
 
-        # Expand all the nodes
-        actions = self.game.possible_moves(c, n)
+        possible_actions = self.game.possible_moves(color, board=state)
+        best_action_value = None
+        best_action = None
 
-        for action in actions:
-            new_state = self.game.step(action, board=n)
+        for a in possible_actions:
+            val = self.max_value(self.game.step(a, board=state), (color + 1) % 2, depth - 1)
+            if (best_action_value is None) or (val < best_action_value):
+                best_action_value = val
+                best_action = a
 
-            if not ((True in [are_equal(el, new_state) for el in visited]) or frontier.contains(new_state, are_equal)):
-                frontier.push(new_state)
+        return best_action_value
 
-        return self.recursive_minimax(frontier, visited, -1 * status, depth - 1)
+    def max_value(self, state, color, depth):
+        if depth == 0:
+            return self.game.evaluate(self.color, board=state)
+
+        possible_actions = self.game.possible_moves(color, board=state)
+        best_action_value = None
+        best_action = None
+
+        for a in possible_actions:
+            val = self.min_value(self.game.step(a, board=state), (color + 1) % 2, depth - 1)
+            if (best_action_value is None) or (val > best_action_value):
+                best_action_value = val
+                best_action = a
+
+        return best_action_value
