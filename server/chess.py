@@ -1,6 +1,5 @@
 import ruamel.yaml
 import numpy as np
-import copy
 
 
 class Chess(object):
@@ -82,7 +81,9 @@ class Chess(object):
             if action in self.moves_at_pos(a_init[0], a_init[1]):
                 self.board[a_final[0]][a_final[1]] = self.board[a_init[0]][a_init[1]]
                 self.board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
-        return self.board
+            else:
+                return False
+        return True
 
     def step(self, action, board=None):
         """For planning purposes; what would the board look like if this move happened"""

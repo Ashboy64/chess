@@ -1,6 +1,3 @@
-from chess import Action
-from utils import LIFO, are_equal
-
 
 class Agent(object):
     """Agent."""
@@ -33,13 +30,11 @@ class Agent(object):
 
         possible_actions = self.game.possible_moves(color, board=state)
         best_action_value = None
-        best_action = None
 
         for a in possible_actions:
             val = self.max_value(self.game.step(a, board=state), (color + 1) % 2, depth - 1)
             if (best_action_value is None) or (val < best_action_value):
                 best_action_value = val
-                best_action = a
 
         return best_action_value
 
@@ -49,12 +44,10 @@ class Agent(object):
 
         possible_actions = self.game.possible_moves(color, board=state)
         best_action_value = None
-        best_action = None
 
         for a in possible_actions:
             val = self.min_value(self.game.step(a, board=state), (color + 1) % 2, depth - 1)
             if (best_action_value is None) or (val > best_action_value):
                 best_action_value = val
-                best_action = a
 
         return best_action_value

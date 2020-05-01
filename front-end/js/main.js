@@ -67,6 +67,18 @@ function generateBoard(table) {
 	}
 }
 
+function stepOpponent(){
+	let Http = new XMLHttpRequest();
+	Http.open("GET", game_url + "opponent_step");
+	Http.send();
+
+	Http.onreadystatechange = (e) => {
+		if (Http.readyState == 4 && Http.status == 200){
+			updateTable();
+		}
+	}
+}
+
 function onClick(id){
 	let div = document.getElementById(id)
 
@@ -86,10 +98,17 @@ function onClick(id){
 
 		Http.onreadystatechange = (e) => {
 			if (Http.readyState == 4 && Http.status == 200){
-				// document.getElementById("div_" + selected.join(".")).innerHTML = "";
-				document.getElementById("div_" + selected.join(".")).style.border = "1px solid white";
-				selected = null;
-				updateTable(table)
+				let worked = JSON.parse(Http.responseText)["worked"]
+				if (worked){
+					document.getElementById("div_" + selected.join(".")).style.border = "1px solid white";
+					selected = null;
+					updateTable(table)
+					stepOpponent()
+				} else {
+					alert("Please enter a valid move.")
+					document.getElementById("div_" + selected.join(".")).style.border = "1px solid white";
+					selected = null
+				}
 			}
 		}
 

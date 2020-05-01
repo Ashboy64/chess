@@ -7,7 +7,7 @@ from chess import Chess, Action
 app = Flask(__name__)
 CORS(app)
 chess = Chess()
-agent = Agent(chess, 0, 1)
+agent = Agent(chess, 0, 3)
 
 
 @app.route("/")
@@ -24,10 +24,15 @@ def take_action():
     new = [[int(new[0]), int(new[2])], [int(new[4]), int(new[6])]]
 
     a = Action(a_type, new)
-    chess.real_step(a)
+    if chess.real_step(a):
+        return jsonify({"worked": True})
+    return jsonify({"worked": False})
 
+
+@app.route("/opponent_step")
+@cross_origin()
+def opponent_step():
     agent.act()
-
     return jsonify(chess.to_array())
 
 
