@@ -127,9 +127,9 @@ class Chess(object):
         p = board[r][c]
         moves = []
 
-        for i in range(-1, 1):
-            for j in range(-1, 1):
-                if ((i != 0 or j != 0) and (0 <= r + i < len(board)) and (0 <= c + j < len(board[0]))
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                if (([i, j] != [0, 0]) and (0 <= r + i < len(board)) and (0 <= c + j < len(board[0]))
                         and (board[r + i][c + j].color != p.color)):
                     moves.append(Action(0, [[r, c], [r + i, c + j]]))
 
@@ -254,24 +254,21 @@ class Chess(object):
         else:
             complement = 0
 
+        i = 1
         if p.color == 0:
-            i = 1
             if (r == 1) and (board[r + 2][c].index == 0):
                 moves.append(Action(0, [[r, c], [r + 2, c]]))
-
         elif p.color == 1:
             i = -1
             if (r == len(board) - 2) and (board[r - 2][c].index == 0):
                 moves.append(Action(0, [[r, c], [r - 2, c]]))
 
-        for j in [-1, 0, 1]:
-            if ((i != 0) or (j != 0)) and (0 < r + i < len(board) and 0 < c + j < len(board[0])):
-                p2 = board[r + i][c + j]
-                if p2.color == complement:
-                    moves.append(Action(0, [[r, c], [r + i, c + j]]))
-
-        if board[r + i][c].index == 0:
+        if (0 <= r + i < len(board)) and (board[r + i][c].index == 0):
             moves.append(Action(0, [[r, c], [r + i, c]]))
+
+        for j in [-1, 1]:
+            if (0 <= r + i < len(board)) and (0 <= c + j < len(board[0])) and (board[r + i][c + j].color == complement):
+                moves.append(Action(0, [[r, c], [r + i, c + j]]))
 
         return moves
 

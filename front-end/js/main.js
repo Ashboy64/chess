@@ -1,3 +1,5 @@
+// Assumes that the user is always playing black
+
 const game_url = "http://127.0.0.1:5000/"
 const prefix = "https://github.com/Ashboy64/chess/blob/master/images/Chess_"
 
@@ -48,6 +50,7 @@ function generateBoard(table) {
 
 			let div = document.createElement("div");
 			div.id = "div_" + i + "." + j
+			div.className = "unoccupied";
 			div.style.width = "75px";
 			div.style.height = "75px";
 			div.style.border = "1px solid white"
@@ -82,12 +85,10 @@ function stepOpponent(){
 function onClick(id){
 	let div = document.getElementById(id)
 
-	if (selected == null) {
-
+	if (selected == null && div.innerHTML != '' && div.className == "black") {
 		div.style.border = "1px solid red"
 		selected = id.slice(4).split(".")
-
-	} else {
+	} else if (selected != null) {
 
 		let Http = new XMLHttpRequest();
 		Http.open("GET", game_url + "take_action" + formatParams({
@@ -122,7 +123,6 @@ function updateTable(table){
 
 	Http.onreadystatechange = (e) => {
 		if (Http.readyState == 4 && Http.status == 200){
-			console.log("here")
 			let game_state = JSON.parse(Http.responseText)
 
 			if (game_state != undefined){
@@ -137,10 +137,12 @@ function updateTable(table){
 							to_use = "black " + to_use;
 						} else {
 							div.innerHTML = '';
+							div.className = "unoccupied";
 						}
 
 						if (assets.hasOwnProperty(to_use)){
 							div.innerHTML = '<p style="font-size: 60px; margin-top: 0px;" id=p_' + i + "." + j + '>' + assets[to_use] + '</p>';
+							div.className = to_use.slice(0, 5)
 							// div.innerHTML += '<img src="' + assets[to_use] + '"/>';
 						}
 					}
@@ -162,3 +164,5 @@ function formatParams( params ){
 format(table)
 generateBoard(table)
 updateTable(table)
+stepOpponent()
+updateTable()
