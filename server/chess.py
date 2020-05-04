@@ -256,11 +256,11 @@ class Chess(object):
 
         i = 1
         if p.color == 0:
-            if (r == 1) and (board[r + 2][c].index == 0):
+            if (r == 1) and (board[r + 1][c].index == 0) and (board[r + 2][c].index == 0):
                 moves.append(Action(0, [[r, c], [r + 2, c]]))
         elif p.color == 1:
             i = -1
-            if (r == len(board) - 2) and (board[r - 2][c].index == 0):
+            if (r == len(board) - 2) and (board[r - 1][c].index == 0) and (board[r - 2][c].index == 0):
                 moves.append(Action(0, [[r, c], [r - 2, c]]))
 
         if (0 <= r + i < len(board)) and (board[r + i][c].index == 0):

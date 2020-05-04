@@ -7,7 +7,7 @@ from chess import Chess, Action
 app = Flask(__name__)
 CORS(app)
 chess = Chess()
-agent = Agent(chess, 0, 3)
+agent = Agent(chess, 0, 4)
 
 
 @app.route("/")
