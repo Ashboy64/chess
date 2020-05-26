@@ -77,7 +77,14 @@ function stepOpponent(){
 
 	Http.onreadystatechange = (e) => {
 		if (Http.readyState == 4 && Http.status == 200){
-			updateTable();
+
+				if (JSON.parse(Http.responseText)["user_checkmated"]){
+					alert("You Lost!")
+					updateTable(table)
+					stepOpponent()
+				}
+
+			updateTable(table)
 		}
 	}
 }
@@ -104,6 +111,12 @@ function onClick(id){
 					document.getElementById("div_" + selected.join(".")).style.border = "1px solid white";
 					selected = null;
 					updateTable(table)
+
+					if (JSON.parse(Http.responseText)["opp_checkmated"]){
+						alert("You Won!")
+						updateTable(table)
+					}
+
 					stepOpponent()
 				} else {
 					alert("Please enter a valid move.")
@@ -165,4 +178,3 @@ format(table)
 generateBoard(table)
 updateTable(table)
 stepOpponent()
-updateTable()

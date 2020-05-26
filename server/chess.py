@@ -40,6 +40,31 @@ class Chess(object):
         self.board[len(self.board) - 1] = start_black
         self.board[len(self.board) - 2] = pawn_black
 
+    def reset(self):
+        self.build_board()
+
+    def checkmate(self, color):     # is this color checkmated
+        for move in self.possible_moves(color):
+            board = self.step(move)
+
+            can_kill_king = False
+            for opp_move in self.possible_moves((color + 1) % 2, board):
+                new_board = self.step(opp_move, board)
+                king_present = False  # Is color's king still on the board
+
+                for r in range(len(new_board)):
+                    for c in range(len(new_board[r])):
+                        if new_board[r][c].index == 6 and new_board[r][c].color == color:
+                            king_present = True
+
+                if not king_present:     # We found a move that if color makes it opponent can take king
+                    can_kill_king = True
+                    break
+
+            if not can_kill_king:
+                return False
+        return True
+
     def possible_moves(self, color, board=None):
         if board is None:
             board = self.board

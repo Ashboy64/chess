@@ -11,7 +11,9 @@ class Agent(object):
         self.depth = depth
 
     def act(self):
-        self.game.real_step(self.minimax_decision(self.depth))
+        move = self.minimax_decision(self.depth)
+        self.game.real_step(move)
+        return move
 
     def minimax_decision(self, depth):
         """ONLY WORKS FOR ACTION TYPE 0"""
