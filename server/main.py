@@ -44,5 +44,11 @@ def opponent_step(chess=chess):
     return jsonify({"user_checkmated": False})
 
 
+@app.route("/reset")
+@cross_origin()
+def reset(chess=chess):
+    chess.reset()
+
+
 if __name__ == "__main__":
     app.run(debug=True)

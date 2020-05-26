@@ -174,6 +174,17 @@ function formatParams( params ){
         .join("&")
 }
 
+function reset(){
+	let Http = new XMLHttpRequest();
+	Http.open("GET", game_url + "reset");
+	Http.send();
+
+	Http.onreadystatechange = (e) => {
+		updateTable(table)
+		stepOpponent()
+	}
+}
+
 format(table)
 generateBoard(table)
 updateTable(table)
