@@ -40,8 +40,8 @@ def opponent_step(chess=chess):
     print(move)
     if chess.checkmate(1):
         chess.reset()
-        return jsonify({"user_checkmated": True})
-    return jsonify({"user_checkmated": False})
+        return jsonify({"user_checkmated": True, "user_check": chess.check(1)})
+    return jsonify({"user_checkmated": False, "user_check": chess.check(1)})
 
 
 @app.route("/reset")

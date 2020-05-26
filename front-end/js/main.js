@@ -82,6 +82,9 @@ function stepOpponent(){
 					alert("You Lost!")
 					updateTable(table)
 					stepOpponent()
+				} else if (JSON.parse(Http.responseText)["user_check"]){
+					updateTable(table)
+					alert("Check!")
 				}
 
 			updateTable(table)

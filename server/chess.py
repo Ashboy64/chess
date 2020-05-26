@@ -43,6 +43,21 @@ class Chess(object):
     def reset(self):
         self.build_board()
 
+    def check(self, color):     # is color in check
+        for opp_move in self.possible_moves((color + 1) % 2):
+            board = self.step(opp_move)
+
+            king_present = False  # Is color's king still on the board
+
+            for r in range(len(board)):
+                for c in range(len(board[r])):
+                    if board[r][c].index == 6 and board[r][c].color == color:
+                        king_present = True
+
+            if not king_present:
+                return True
+        return False
+
     def checkmate(self, color):     # is this color checkmated
         for move in self.possible_moves(color):
             board = self.step(move)
