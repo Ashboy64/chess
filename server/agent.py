@@ -23,10 +23,11 @@ class Agent(object):
         best_action = None
 
         for a in possible_actions:
-            val = self.min_value(self.game.step(a), best_action_value, (self.color + 1) % 2, depth - 1)
-            if (best_action_value is None) or (val > best_action_value):
-                best_action_value = val
-                best_action = a
+            if a.type != 2:
+                val = self.min_value(self.game.step(a), best_action_value, (self.color + 1) % 2, depth - 1)
+                if (best_action_value is None) or (val > best_action_value):
+                    best_action_value = val
+                    best_action = a
         return best_action
 
     def min_value(self, state, alpha, color, depth):
@@ -38,12 +39,13 @@ class Agent(object):
         best_action_value = None
 
         for a in possible_actions:
-            val = self.max_value(self.game.step(a, board=state), best_action_value, (color + 1) % 2, depth - 1)
-            if (best_action_value is None) or (val < best_action_value):
-                best_action_value = val
+            if a.type != 2:
+                val = self.max_value(self.game.step(a, board=state), best_action_value, (color + 1) % 2, depth - 1)
+                if (best_action_value is None) or (val < best_action_value):
+                    best_action_value = val
 
-            if alpha is not None and best_action_value <= alpha:
-                return best_action_value
+                if alpha is not None and best_action_value <= alpha:
+                    return best_action_value
 
         return best_action_value
 
@@ -56,11 +58,12 @@ class Agent(object):
         best_action_value = None
 
         for a in possible_actions:
-            val = self.min_value(self.game.step(a, board=state), best_action_value, (color + 1) % 2, depth - 1)
-            if (best_action_value is None) or (val > best_action_value):
-                best_action_value = val
+            if a.type != 2:
+                val = self.min_value(self.game.step(a, board=state), best_action_value, (color + 1) % 2, depth - 1)
+                if (best_action_value is None) or (val > best_action_value):
+                    best_action_value = val
 
-            if beta is not None and best_action_value >= beta:
-                return best_action_value
+                if beta is not None and best_action_value >= beta:
+                    return best_action_value
 
         return best_action_value

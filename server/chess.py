@@ -19,6 +19,10 @@ class Chess(object):
         for i in range(8):
             self.board.append([self.piece_key["unoccupied"] for j in range(8)])
 
+        # Color is index for variables below
+        self.king_moved = [False, False]
+        self.rook_moved = [[False, False], [False, False]]  # 0 is king's side, 1 is queen's
+
         self.populate_board()
 
     def populate_board(self):
@@ -43,9 +47,11 @@ class Chess(object):
     def reset(self):
         self.build_board()
 
-    def check(self, color):     # is color in check
-        for opp_move in self.possible_moves((color + 1) % 2):
-            board = self.step(opp_move)
+    def check(self, color, board=None):  # is color in check on board
+        if board is None:
+            board = self.board
+        for opp_move in self.possible_moves((color + 1) % 2, board):
+            board = self.step(opp_move, board)
 
             king_present = False  # Is color's king still on the board
 
@@ -58,7 +64,7 @@ class Chess(object):
                 return True
         return False
 
-    def checkmate(self, color):     # is this color checkmated
+    def checkmate(self, color):  # is this color checkmated
         for move in self.possible_moves(color):
             board = self.step(move)
 
@@ -72,7 +78,7 @@ class Chess(object):
                         if new_board[r][c].index == 6 and new_board[r][c].color == color:
                             king_present = True
 
-                if not king_present:     # We found a move that if color makes it opponent can take king
+                if not king_present:  # We found a move that if color makes it opponent can take king
                     can_kill_king = True
                     break
 
@@ -119,10 +125,48 @@ class Chess(object):
             a_final = action.new[1]
 
             if action in self.moves_at_pos(a_init[0], a_init[1]):
+                if (not self.king_moved[self.board[a_init[0]][a_init[1]].color]) \
+                        and (self.board[a_init[0]][a_init[1]].name == "king"):
+                    self.king_moved[self.board[a_init[0]][a_init[1]].color] = True
+                elif self.board[a_init[0]][a_init[1]].name == "rook":
+                    if a_init[1] == 0:
+                        idx = 1
+                    elif a_init[1] == len(self.board[0]) - 1:
+                        idx = 0
+                    else:
+                        idx = -1
+                    if idx != -1 and not self.rook_moved[self.board[a_init[0]][a_init[1]].color][idx]:
+                        self.rook_moved[self.board[a_init[0]][a_init[1]].color][idx] = True
+
                 self.board[a_final[0]][a_final[1]] = self.board[a_init[0]][a_init[1]]
                 self.board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
             else:
                 return False
+        elif action.type == 2:
+            print(action)
+            castle = action.new
+
+            if castle[0] == 0:
+                idx = 0
+            else:
+                idx = len(self.board) - 1
+
+            if action in self.possible_moves(castle[0]):
+                if castle[1] == "king":
+                    self.board[idx][4] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                    self.board[idx][7] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                    self.board[idx][6] = Square(self, castle[0], self.piece_key["king"], "king")
+                    self.board[idx][5] = Square(self, castle[0], self.piece_key["rook"], "rook")
+                if castle[1] == "queen":
+                    self.board[idx][4] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                    self.board[idx][0] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                    self.board[idx][2] = Square(self, castle[0], self.piece_key["king"], "king")
+                    self.board[idx][3] = Square(self, castle[0], self.piece_key["rook"], "rook")
+            else:
+                return False
+
+            self.king_moved[castle[0]] = True
+
         return True
 
     def step(self, action, board=None):
@@ -139,8 +183,27 @@ class Chess(object):
         if action.type == 0:
             a_init = action.new[0]
             a_final = action.new[1]
+
             new_board[a_final[0]][a_final[1]] = new_board[a_init[0]][a_init[1]]
             new_board[a_init[0]][a_init[1]] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+        else:   # For now this is only if we are castling
+            castle = action.new
+
+            if castle[0] == 0:
+                idx = len(board) - 1
+            else:
+                idx = 0
+
+            if castle[1] == "king":
+                new_board[idx][4] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                new_board[idx][7] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                new_board[idx][6] = Square(self, castle[0], self.piece_key["king"], "king")
+                new_board[idx][5] = Square(self, castle[0], self.piece_key["rook"], "rook")
+            if castle[1] == "queen":
+                new_board[idx][4] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                new_board[idx][0] = Square(self, -1, self.piece_key["unoccupied"], "unoccupied")
+                new_board[idx][2] = Square(self, castle[0], self.piece_key["king"], "king")
+                new_board[idx][3] = Square(self, castle[0], self.piece_key["rook"], "rook")
 
         return new_board
 
@@ -161,7 +224,7 @@ class Chess(object):
 
         if my_col == 1:
             return total
-        return -1*total
+        return -1 * total
 
     def king_possible_moves(self, r, c, board):
         p = board[r][c]
@@ -173,6 +236,17 @@ class Chess(object):
                         and (board[r + i][c + j].color != p.color)):
                     moves.append(Action(0, [[r, c], [r + i, c + j]]))
 
+        # Castling
+
+        if not self.king_moved[p.color]:
+            for rook_idx in range(len(self.rook_moved[p.color])):
+                if not self.rook_moved[p.color][rook_idx]:
+                    if rook_idx == 0:
+                        if board[r][c+1].index == 0 and board[r][c+2].index == 0:
+                            moves.append(Action(2, [p.color, "king"]))
+                    else:
+                        if board[r][c-1].index == 0 and board[r][c-2].index == 0 and board[r][c-3].index == 0:
+                            moves.append(Action(2, [p.color, "queen"]))
         return moves
 
     def knight_possible_moves(self, r, c, board):
@@ -325,13 +399,16 @@ class Action(object):
 
     def __init__(self, type, new):
         super(Action, self).__init__()
-        self.type = type  # 0 is movement, 1 is switch
-        self.new = new  # if movement, a list of coords [[xi, yi], [xf, yf]]; if switch, new Square
+        self.type = type  # 0 is movement, 1 is switch, 2 is castle
+        # if movement, a list of coords [[xi, yi], [xf, yf]]; if switch, new Square; if castle, [color, "king"/"queen"]
+        self.new = new
 
     def __str__(self):
         if self.type == 0:
             return "go_to(" + str(self.new) + ")"
-        return "change_to(" + str(self.new) + ")"
+        elif self.type == 1:
+            return "change_to(" + str(self.new) + ")"
+        return "castle(" + str(self.new) + ")"
 
     def __repr__(self):
         return self.__str__()
